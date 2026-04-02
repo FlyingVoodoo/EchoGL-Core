@@ -1,4 +1,5 @@
 #include "DBManager.h"
+
 #include "DatabaseException.h"
 
 DBManager::DBManager(const std::string& dbPath, const std::string& schema) {
@@ -26,13 +27,11 @@ void DBManager::execute(const std::string& sql) {
 
 void DBManager::addGame(const Game& game) {
     sqlite3_stmt* raw_stmt = nullptr;
-    int rc = sqlite3_prepare_v2(
-        m_db.get(),
-        "INSERT INTO games (title, description, cover_path, "
-        "steam_playtime_seconds, steam_synced_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        -1, &raw_stmt, nullptr
-    );
+    int rc = sqlite3_prepare_v2(m_db.get(),
+                                "INSERT INTO games (title, description, cover_path, "
+                                "steam_playtime_seconds, steam_synced_at) "
+                                "VALUES (?, ?, ?, ?, ?)",
+                                -1, &raw_stmt, nullptr);
     StatementHandle stmt(raw_stmt);
     if (rc != SQLITE_OK) {
         throw DatabaseException(sqlite3_errmsg(m_db.get()), rc);
