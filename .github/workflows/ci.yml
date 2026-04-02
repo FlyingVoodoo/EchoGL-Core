@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.0'
+          arch: 'win64_msvc2019_64'
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run C++ tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+clang-format:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check C++ formatting
+        run: |
+          clang-format --dry-run --Werror $(
+            Get-ChildItem -Recurse -Include *.cpp,*.h src/ | 
+            Select-Object -ExpandProperty FullName
+          )
+        shell: pwsh
+
+python-checks:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install ruff
+        run: pip install ruff pytest
+      
+      - name: Check Python formatting
+        run: ruff check scripts/
+      
+      - name: Run Python tests
+        run: pytest scripts/ -v
+
+  architecture-lint:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check no SQL outside data layer
+        run: |
+          $found = Select-String -Path src/core/*.cpp, 
+                                       src/ui/*.cpp,
+                                       src/providers/*.cpp `
+                   -Pattern "SELECT|INSERT|UPDATE|DELETE"
+          if ($found) {
+            Write-Error "SQL query found outside data layer!"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Check Python not importing sqlite3 directly  
+        run: |
+          $found = Select-String -Path scripts/**/*.py `
+                   -Pattern "import sqlite3"
+          if ($found) {
+            Write-Error "Python modules must not import sqlite3 directly!"
+            exit 1
+          }
+        shell: pwsh
