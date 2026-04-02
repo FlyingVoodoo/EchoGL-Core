@@ -7,7 +7,6 @@ on:
 jobs:
   build-and-test:
     runs-on: windows-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,64 +28,101 @@ jobs:
       - name: Run C++ tests
         run: ctest --test-dir build -C Release --output-on-failure
 
-clang-format:
+  clang-format:
     runs-on: windows-latest
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Check C++ formatting
-        run: |
-          clang-format --dry-run --Werror $(
-            Get-ChildItem -Recurse -Include *.cpp,*.h src/ | 
-            Select-Object -ExpandProperty FullName
-          )
-        shell: pwsh
 
-python-checks:
+      - name: Check C++ formatting
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Include *.cpp,*.h `
+                   -Path src -ErrorAction SilentlyContinue
+          if ($files) {
+            $result = $files | ForEach-Object {
+              clang-format --dry-run --Werror $_.FullName 2>&1
+            }
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "C++ formatting issues found!"
+              exit 1
+            }
+          }
+
+  python-checks:
     runs-on: windows-latest
-    
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
-      - name: Install ruff
+
+      - name: Install dependencies
         run: pip install ruff pytest
-      
+
       - name: Check Python formatting
         run: ruff check scripts/
-      
+
       - name: Run Python tests
         run: pytest scripts/ -v
 
   architecture-lint:
     runs-on: windows-latest
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Check no SQL outside data layer
-        run: |
-          $found = Select-String -Path src/core/*.cpp, 
-                                       src/ui/*.cpp,
-                                       src/providers/*.cpp `
-                   -Pattern "SELECT|INSERT|UPDATE|DELETE"
-          if ($found) {
-            Write-Error "SQL query found outside data layer!"
-            exit 1
-          }
-        shell: pwsh
 
-      - name: Check Python not importing sqlite3 directly  
-        run: |
-          $found = Select-String -Path scripts/**/*.py `
-                   -Pattern "import sqlite3"
-          if ($found) {
-            Write-Error "Python modules must not import sqlite3 directly!"
-            exit 1
-          }
+      - name: Check no SQL outside data layer
         shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Include *.cpp,*.h `
+                   -Path src/core, src/ui, src/providers `
+                   -ErrorAction SilentlyContinue
+          if ($files) {
+            $found = $files | Select-String `
+                     -Pattern "SELECT|INSERT|UPDATE|DELETE"
+            if ($found) {
+              Write-Error "SQL query found outside data layer!"
+              exit 1
+            }
+          }
+
+      - name: Check Python not importing sqlite3 directly
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Include *.py `
+                   -Path scripts -ErrorAction SilentlyContinue
+          if ($files) {
+            $found = $files | Select-String -Pattern "import sqlite3"
+            if ($found) {
+              Write-Error "Python modules must not import sqlite3 directly!"
+              exit 1
+            }
+          }
+
+      - name: Check UI does not include DBManager directly
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Include *.cpp,*.h `
+                   -Path src/ui -ErrorAction SilentlyContinue
+          if ($files) {
+            $found = $files | Select-String -Pattern '#include.*DBManager'
+            if ($found) {
+              Write-Error "UI layer must not include DBManager directly!"
+              exit 1
+            }
+          }
+
+      - name: Check data layer has no upward dependencies
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Include *.cpp,*.h `
+                   -Path src/data -ErrorAction SilentlyContinue
+          if ($files) {
+            $found = $files | Select-String `
+                     -Pattern '#include.*(core|ui|providers)/'
+            if ($found) {
+              Write-Error "Data layer must not depend on other layers!"
+              exit 1
+            }
+          }
