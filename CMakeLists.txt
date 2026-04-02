@@ -8,11 +8,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-add_compile_options(
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /permissive- /utf-8>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror>
-)
-
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)
 find_package(Python3 REQUIRED COMPONENTS Development)
 
@@ -20,6 +15,12 @@ qt_standard_project_setup()
 
 add_subdirectory(third_party/sqlite3)
 add_subdirectory(third_party/pybind11)
+
+if(MSVC)
+    add_compile_options(/W4 /WX /permissive- /utf-8)
+else()
+    add_compile_options(-Wall -Wextra -Werror)
+endif()
 
 add_subdirectory(src/data)
 add_subdirectory(src/providers)
