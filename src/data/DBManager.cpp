@@ -39,15 +39,8 @@ void DBManager::addGame(const Game& game) {
 
     sqlite3_bind_text(stmt.get(), 1, game.title.c_str(), -1, SQLITE_TRANSIENT);
 
-    if (game.description)
-        sqlite3_bind_text(stmt.get(), 2, game.description->c_str(), -1, SQLITE_TRANSIENT);
-    else
-        sqlite3_bind_null(stmt.get(), 2);
-
-    if (game.cover_path)
-        sqlite3_bind_text(stmt.get(), 3, game.cover_path->c_str(), -1, SQLITE_TRANSIENT);
-    else
-        sqlite3_bind_null(stmt.get(), 3);
+    sqlite3_bind_text(stmt.get(), 2, game.description.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt.get(), 3, game.cover_path.c_str(), -1, SQLITE_TRANSIENT);
 
     sqlite3_bind_int(stmt.get(), 4, game.steam_playtime_seconds);
 
