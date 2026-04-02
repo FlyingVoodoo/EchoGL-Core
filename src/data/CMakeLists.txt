@@ -1,9 +1,9 @@
 add_library(echogl_data STATIC
     DBManager.cpp
-    DBManager.h
-    models/Game.h
-    models/Platform.h
-    models/Session.h
+    DBManager.hpp
+    models/Game.hpp
+    models/Platform.hpp
+    models/Session.hpp
 )
 
 target_include_directories(echogl_data

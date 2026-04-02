@@ -1,10 +1,10 @@
 add_library(echogl_core STATIC
     GameEngine.cpp
-    GameEngine.h
+    GameEngine.hpp
     ProcessWatcher.cpp
-    ProcessWatcher.h
+    ProcessWatcher.hpp
     ScriptingBridge.cpp
-    ScriptingBridge.h
+    ScriptingBridge.hpp
 )
 
 target_include_directories(echogl_core

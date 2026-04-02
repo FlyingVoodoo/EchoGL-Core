@@ -1,12 +1,12 @@
 qt_add_library(echogl_ui STATIC
     MainWindow.cpp
-    MainWindow.h
+    MainWindow.hpp
     widgets/GameCard.cpp
-    widgets/GameCard.h
+    widgets/GameCard.hpp
     views/DetailsView.cpp
-    views/DetailsView.h
+    views/DetailsView.hpp
     dialogs/SettingsDialog.cpp
-    dialogs/SettingsDialog.h
+    dialogs/SettingsDialog.hpp
 )
 
 qt_add_resources(echogl_ui "assets"
