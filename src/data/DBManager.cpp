@@ -1,6 +1,6 @@
-#include "DBManager.h"
+#include "DBManager.hpp"
 
-#include "DatabaseException.h"
+#include "DatabaseException.hpp"
 
 DBManager::DBManager(const std::string& dbPath, const std::string& schema) {
     sqlite3* raw_db = nullptr;
