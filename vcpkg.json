@@ -1,0 +1,6 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/schemas/vcpkg-schema.json",
+  "name": "echogl",
+  "version": "2.0.0",
+  "dependencies": []
+}
